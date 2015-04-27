@@ -1,0 +1,8 @@
+*.dll
+*.o
+*.d
+*.res
+*.exe
+*.swp
+*.ttf
+BananaPiano
