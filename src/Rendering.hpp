@@ -17,7 +17,7 @@ const float w = 256; // board size
 
 void renderConnectionIndicator(sf::RenderWindow* window, RenderData& data);
 
-void renderCube(sf::RenderWindow* window, RenderData& data);
+void renderNotes(sf::RenderWindow* window, RenderData& data);
 
 void renderColor(sf::RenderWindow* window, RenderData& data);
 

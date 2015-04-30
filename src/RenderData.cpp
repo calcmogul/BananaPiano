@@ -9,3 +9,4 @@
 RenderData::RenderData() {
     font.loadFromFile("arial.ttf");
 }
+
