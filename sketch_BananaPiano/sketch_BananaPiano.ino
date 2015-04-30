@@ -2,20 +2,23 @@ void setup() {
     Serial.begin(115200);
 
     for (int i = 0; i <= 11; i++) {
-        pinMode(i, INPUT);
+        pinMode(i, INPUT_PULLUP);
     }
 }
 
 void loop() {
     // G#, A, Bb, B, C, C#, D, Eb, E, F, F#, G
     for (int i = 0; i <= 11; i++) {
-        if (analogRead(i) > 3.0) {
-            Serial.print("0");
+        // '1' means pin is HIGH; '0' means pin is LOW
+        if (analogRead(i) * 0.0049 > 3.0) {
+            Serial.write('1');
         }
         else {
-            Serial.print("1");
+            Serial.write('0');
         }
     }
-    Serial.println("");
+    Serial.write('\n');
+
+    delay(50);
 }
 
