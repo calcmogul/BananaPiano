@@ -12,14 +12,9 @@
 #include <vector>
 #include "RenderData.hpp"
 
-const unsigned int subDivs = 3; // board sub-divisions
-const float w = 256; // board size
-
 void renderConnectionIndicator(sf::RenderWindow* window, RenderData& data);
 
 void renderNotes(sf::RenderWindow* window, RenderData& data);
-
-void renderColor(sf::RenderWindow* window, RenderData& data);
 
 #endif // RENDERING_HPP
 
