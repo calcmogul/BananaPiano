@@ -280,14 +280,19 @@ std::vector<std::string> SerialPort::getSerialPorts() {
     d = opendir("/dev");
     if (d) {
         while ((dir = readdir(d)) != nullptr) {
-            if (dir->d_type == DT_CHR &&
-                (std::strncmp(dir->d_name, "ttyS", sizeof("ttyS") - 1) == 0 ||
-                 std::strncmp(dir->d_name, "ttyACM",
-                              sizeof("ttyACM") - 1) == 0)) {
-                // std::cout << dir->d_name << '\n';
-                std::string tmp = "/dev/";
-                tmp += dir->d_name;
-                ports.push_back(tmp);
+#ifdef ARDUINO
+            std::string names[2] = {"ttyACM", "ttyUSB"};
+#else
+            std::string names[1] = {"ttyUSB"};
+#endif
+            if (dir->d_type == DT_CHR) {
+                for (auto& name : names) {
+                    if (std::strncmp(dir->d_name, name.c_str(), name.length() - 1) == 0) {
+                        std::string tmp = "/dev/";
+                        tmp += dir->d_name;
+                        ports.emplace_back(tmp);
+                    }
+                }
             }
         }
 

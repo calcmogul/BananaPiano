@@ -4,15 +4,16 @@
 // Author: Tyler Veness
 // =============================================================================
 
+#include <bitset>
 #include <iostream>
 #include <string>
 #include <vector>
 #include <cstdlib>
 #include <cmath>
 
-#include "SerialPort.hpp"
 #include "RenderData.hpp"
 #include "Rendering.hpp"
+#include "SerialPort.hpp"
 
 #include "KalmanFilter.hpp"
 
@@ -23,7 +24,7 @@
 #include <SFML/Audio/Sound.hpp>
 #include <SFML/Audio/SoundBuffer.hpp>
 
-const int numNotes = 12;
+const int numNotes = 3;
 
 int main() {
     RenderData renderData;
@@ -31,15 +32,15 @@ int main() {
     SerialPort serialPort;
 
     sf::ContextSettings settings;
-    settings.depthBits = 32;
-    settings.stencilBits = 0;
+    settings.depthBits = 24;
+    settings.stencilBits = 8;
     settings.antialiasingLevel = 4;
     settings.majorVersion = 3;
     settings.minorVersion = 0;
 
     // Setup
     sf::RenderWindow mainWin(
-        sf::VideoMode::getDesktopMode(), "Banana Piano",
+        sf::VideoMode(72, 72), "Banana Piano",
         sf::Style::Resize | sf::Style::Close, settings);
     mainWin.setFramerateLimit(25);
 
@@ -79,7 +80,7 @@ int main() {
     glEnable(GL_COLOR_MATERIAL);
     glColorMaterial(GL_FRONT, GL_AMBIENT_AND_DIFFUSE);
 
-    // Used to store data read from serialPort port
+    // Used to store data read from serial port or socket
     std::string serialPortData;
     char curChar = '\0';
     char numRead = 0;
