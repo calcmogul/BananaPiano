@@ -1,0 +1,8 @@
+[Unit]
+Description=Provides serial port for Banana Piano data
+After=syslog.target network.target
+[Service]
+Type=simple
+ExecStart=/root/BananaPiano.py
+[Install]
+WantedBy=multi-user.target
