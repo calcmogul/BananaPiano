@@ -9,8 +9,8 @@ from time import sleep
 # Set up DIO pins
 DIOs = ["P9_27", "P9_25", "P9_23"]
 for i in range(0, 2):
-	GPIO.setup(DIOs[i], GPIO.OUT)
-	GPIO.output(DIOs[i], GPIO.HIGH)
+    GPIO.setup(DIOs[i], GPIO.OUT)
+    GPIO.output(DIOs[i], GPIO.HIGH)
 
 # Set up Analog In pins
 ADC.setup()
@@ -25,16 +25,16 @@ ser.close()
 values = ['0', '0', '0', '\n']
 
 while (1):
-	if ser.isOpen():
-		for i in range(0, 3):
-			pinVal = ADC.read(AINs[i])
+    if ser.isOpen():
+        for i in range(0, 3):
+            pinVal = ADC.read(AINs[i])
 
-			if pinVal > 0.55:
-				values[i] = '1'
-			else:
-				values[i] = '0'
-		ser.write(''.join(values))
-	else:
-		ser.open()
-        sleep(.05)
+            if pinVal > 0.55:
+                values[i] = '1'
+            else:
+                values[i] = '0'
+        ser.write(''.join(values))
+    else:
+        ser.open()
+    sleep(.05)
 ser.close()
