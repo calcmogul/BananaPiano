@@ -1,31 +1,26 @@
-// =============================================================================
-// File Name: Main.cpp
-// Description: Implements mouse input driver using 3D capacitor
-// Author: Tyler Veness
-// =============================================================================
+// Copyright (c) Tyler Veness 2015-2017. All Rights Reserved.
 
 #include <bitset>
+#include <cmath>
+#include <cstdlib>
 #include <iostream>
 #include <string>
 #include <vector>
-#include <cstdlib>
-#include <cmath>
 
-#include "RenderData.hpp"
-#include "Rendering.hpp"
-#include "SerialPort.hpp"
-
-#include "KalmanFilter.hpp"
-
+#include <SFML/Audio/Sound.hpp>
+#include <SFML/Audio/SoundBuffer.hpp>
 #include <SFML/Graphics/RenderWindow.hpp>
 #include <SFML/OpenGL.hpp>
 #include <SFML/Window/Event.hpp>
 
-#include <SFML/Audio/Sound.hpp>
-#include <SFML/Audio/SoundBuffer.hpp>
+#include "KalmanFilter.hpp"
+#include "RenderData.hpp"
+#include "Rendering.hpp"
+#include "SerialPort.hpp"
 
 const int numNotes = 3;
 
+// Implements mouse input driver for 3D capacitor
 int main() {
     RenderData renderData;
 
@@ -39,9 +34,8 @@ int main() {
     settings.minorVersion = 0;
 
     // Setup
-    sf::RenderWindow mainWin(
-        sf::VideoMode(72, 72), "Banana Piano",
-        sf::Style::Resize | sf::Style::Close, settings);
+    sf::RenderWindow mainWin(sf::VideoMode(72, 72), "Banana Piano",
+                             sf::Style::Resize | sf::Style::Close, settings);
     mainWin.setFramerateLimit(25);
 
     mainWin.setActive();
@@ -64,9 +58,9 @@ int main() {
     glDisable(GL_TEXTURE_2D);
 
     // Declare lighting parameters
-    GLfloat mat_specular[] = { 1.0, 1.0, 1.0, 1.0 };
-    GLfloat mat_shininess[] = { 50.0 };
-    GLfloat light_position[] = { 1.0, 1.0, 1.0, 0.0 };
+    GLfloat mat_specular[] = {1.0, 1.0, 1.0, 1.0};
+    GLfloat mat_shininess[] = {50.0};
+    GLfloat light_position[] = {1.0, 1.0, 1.0, 0.0};
 
     // Set lighting parameters
     glShadeModel(GL_SMOOTH);
@@ -87,8 +81,8 @@ int main() {
 
     std::vector<sf::Sound> sounds;
     std::vector<sf::SoundBuffer> buffers{numNotes};
-    std::vector<std::string> notes{"g#", "a", "bb", "b", "c", "c#", "d", "eb",
-                                   "e", "f", "f#", "g"};
+    std::vector<std::string> notes{"g#", "a",  "bb", "b", "c",  "c#",
+                                   "d",  "eb", "e",  "f", "f#", "g"};
     std::vector<char> lastInput(numNotes, '1');
 
     for (unsigned int i = 0; i < numNotes; i++) {
@@ -117,18 +111,16 @@ int main() {
 
         // Read line of serialPort data
         if (serialPort.isConnected()) {
-            while ((numRead =
-                        serialPort.read(&curChar, 1)) > 0 && curChar != '\n' &&
-                   curChar != '\0') {
+            while ((numRead = serialPort.read(&curChar, 1)) > 0 &&
+                   curChar != '\n' && curChar != '\0') {
                 serialPortData += curChar;
             }
 
             if (numRead == -1) {
                 // EOF has been reached (socket disconnected)
                 serialPort.disconnect();
-            }
-            // If curChar == '\n', there is a new line of complete data
-            else if (curChar == '\n' && serialPortData.length() != 0) {
+            } else if (curChar == '\n' && serialPortData.length() != 0) {
+                // If curChar == '\n', there is a new line of complete data
                 std::cout << serialPortData << std::endl;
 
                 if (serialPortData.length() == numNotes) {
@@ -141,8 +133,7 @@ int main() {
 
                         lastInput[i] = serialPortData[i];
                     }
-                }
-                else {
+                } else {
                     renderData.haveValidData = false;
                 }
 
@@ -160,4 +151,3 @@ int main() {
 
     return 0;
 }
-

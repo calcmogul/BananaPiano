@@ -1,14 +1,10 @@
-// =============================================================================
-// File Name: Rendering.cpp
-// Description: Provides helper functions for drawing various elements of the
-//              GUI with OpenGL
-// Author: Tyler Veness
-// =============================================================================
+// Copyright (c) Tyler Veness 2015-2017. All Rights Reserved.
 
 #include "Rendering.hpp"
-#include "GLUtils.hpp"
 
 #include <SFML/OpenGL.hpp>
+
+#include "GLUtils.hpp"
 
 void renderConnectionIndicator(sf::RenderWindow* window, RenderData& data) {
     // Save projection matrix
@@ -33,13 +29,11 @@ void renderConnectionIndicator(sf::RenderWindow* window, RenderData& data) {
         if (data.haveValidData) {
             // Connected and valid data
             glColor3ub(0, 200, 0);
-        }
-        else {
+        } else {
             // Connected but no valid data
             glColor3ub(255, 220, 0);
         }
-    }
-    else {
+    } else {
         // Disconnected
         glColor3ub(200, 0, 0);
     }
@@ -69,4 +63,3 @@ void renderNotes(sf::RenderWindow* window, RenderData& data) {
 
     window->display();
 }
-
