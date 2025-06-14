@@ -12,28 +12,28 @@
 #include <SFML/Graphics/RenderWindow.hpp>
 #include <SFML/Window/Event.hpp>
 
-#include "SerialPort.hpp"
+#include "serial_port.hpp"
 
 static constexpr int NUM_NOTES = 3;
 
 int main() {
-    SerialPort serialPort;
+    SerialPort serial_port;
 
-    sf::RenderWindow mainWin{sf::VideoMode{{72, 72}}, "Banana Piano",
-                             sf::Style::Resize | sf::Style::Close,
-                             sf::State::Windowed};
-    mainWin.setFramerateLimit(25);
+    sf::RenderWindow main_window{sf::VideoMode{{72, 72}}, "Banana Piano",
+                                 sf::Style::Resize | sf::Style::Close,
+                                 sf::State::Windowed};
+    main_window.setFramerateLimit(25);
 
     // Used to store data read from serial port or socket
-    std::string serialPortData;
-    char curChar = '\0';
-    char numRead = 0;
+    std::string serial_port_data;
+    char cur_char = '\0';
+    char num_read = 0;
 
     std::vector<sf::Sound> sounds;
     std::vector<sf::SoundBuffer> buffers{NUM_NOTES};
     constexpr std::array NOTES{"g#", "a",  "bb", "b", "c",  "c#",
                                "d",  "eb", "e",  "f", "f#", "g"};
-    std::vector<char> lastInput(NUM_NOTES, '1');
+    std::vector<char> last_input(NUM_NOTES, '1');
 
     for (size_t i = 0; i < NUM_NOTES; ++i) {
         if (!buffers[i].loadFromFile(
@@ -43,66 +43,67 @@ int main() {
         sounds.emplace_back(buffers[i]);
     }
 
-    bool haveValidData = false;
+    bool have_valid_data = false;
 
-    while (mainWin.isOpen()) {
-        while (auto event = mainWin.pollEvent()) {
+    while (main_window.isOpen()) {
+        while (auto event = main_window.pollEvent()) {
             if (event->is<sf::Event::Closed>()) {
-                mainWin.close();
+                main_window.close();
             }
         }
 
         // Attempt a connection
-        if (!serialPort.isConnected()) {
-            std::vector<std::string> ports = SerialPort::getSerialPorts();
+        if (!serial_port.is_connected()) {
+            auto ports = SerialPort::get_serial_ports();
             if (ports.size() > 0) {
-                serialPort.connect(ports[0]);
+                serial_port.connect(ports[0]);
             }
         }
 
-        // Read line of serialPort data
-        if (serialPort.isConnected()) {
-            while ((numRead = serialPort.read(&curChar, 1)) > 0 &&
-                   curChar != '\n' && curChar != '\0') {
-                serialPortData += curChar;
+        // Read line of serial_port data
+        if (serial_port.is_connected()) {
+            while ((num_read = serial_port.read(&cur_char, 1)) > 0 &&
+                   cur_char != '\n' && cur_char != '\0') {
+                serial_port_data += cur_char;
             }
 
-            if (numRead == -1) {
+            if (num_read == -1) {
                 // EOF has been reached (socket disconnected)
-                serialPort.disconnect();
-            } else if (curChar == '\n' && serialPortData.length() != 0) {
-                // If curChar == '\n', there is a new line of complete data
-                std::println("{}", serialPortData);
+                serial_port.disconnect();
+            } else if (cur_char == '\n' && serial_port_data.length() != 0) {
+                // If cur_char == '\n', there is a new line of complete data
+                std::println("{}", serial_port_data);
 
-                if (serialPortData.length() == NUM_NOTES) {
-                    haveValidData = true;
+                if (serial_port_data.length() == NUM_NOTES) {
+                    have_valid_data = true;
 
                     for (size_t i = 0; i < NUM_NOTES; ++i) {
-                        if (serialPortData[i] == '0' && lastInput[i] == '1') {
+                        if (serial_port_data[i] == '0' &&
+                            last_input[i] == '1') {
                             sounds[i].play();
                         }
 
-                        lastInput[i] = serialPortData[i];
+                        last_input[i] = serial_port_data[i];
                     }
                 } else {
-                    haveValidData = false;
+                    have_valid_data = false;
                 }
 
                 // Reset serial data storage in preparation for new line of data
-                serialPortData.clear();
-                curChar = '\0';
-                numRead = 0;
+                serial_port_data.clear();
+                cur_char = '\0';
+                num_read = 0;
             }
         }
 
-        mainWin.clear(sf::Color::White);
+        main_window.clear(sf::Color::White);
 
         // Render connection indicator
         sf::CircleShape circle{18.f};
         circle.setOrigin(circle.getGeometricCenter());
         circle.setPosition({36.f, 36.f});
-        if (serialPort.isConnected()) {
-            if (haveValidData) {
+        if (serial_port.is_connected()) {
+            if (have_valid_data) {
                 // Connected and valid data
                 circle.setFillColor(sf::Color{0, 200, 0});
             } else {
@@ -113,8 +114,8 @@ int main() {
             // Disconnected
             circle.setFillColor(sf::Color{200, 0, 0});
         }
-        mainWin.draw(circle);
+        main_window.draw(circle);
 
-        mainWin.display();
+        main_window.display();
     }
 }
