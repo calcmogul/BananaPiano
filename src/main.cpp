@@ -14,8 +14,6 @@
 
 #include "serial_port.hpp"
 
-static constexpr int NUM_NOTES = 3;
-
 int main() {
     SerialPort serial_port;
 
@@ -29,20 +27,21 @@ int main() {
     char cur_char = '\0';
     int num_read = 0;
 
-    std::vector<sf::Sound> sounds;
-    sounds.reserve(NUM_NOTES);
-
-    std::vector<sf::SoundBuffer> buffers;
-    buffers.reserve(NUM_NOTES);
-
     constexpr std::array NOTES{"g#", "a",  "bb", "b", "c",  "c#",
                                "d",  "eb", "e",  "f", "f#", "g"};
+
+    std::vector<sf::Sound> sounds;
+    sounds.reserve(NOTES.size());
+
+    std::vector<sf::SoundBuffer> buffers;
+    buffers.reserve(NOTES.size());
+
     for (const auto& note : NOTES) {
         buffers.emplace_back(std::format("data/piano-{}.wav", note));
         sounds.emplace_back(buffers.back());
     }
 
-    std::vector<char> last_input{NUM_NOTES, '1'};
+    std::vector<char> last_input{NOTES.size(), '1'};
     bool have_valid_data = false;
 
     while (main_window.isOpen()) {
@@ -70,14 +69,14 @@ int main() {
             if (num_read == -1) {
                 // EOF has been reached (socket disconnected)
                 serial_port.disconnect();
-            } else if (cur_char == '\n' && serial_port_data.length() != 0) {
+            } else if (cur_char == '\n' && serial_port_data.size() != 0) {
                 // If cur_char == '\n', there is a new line of complete data
                 std::println("{}", serial_port_data);
 
-                if (serial_port_data.length() == NUM_NOTES) {
+                if (serial_port_data.size() == NOTES.size()) {
                     have_valid_data = true;
 
-                    for (size_t i = 0; i < NUM_NOTES; ++i) {
+                    for (size_t i = 0; i < NOTES.size(); ++i) {
                         if (serial_port_data[i] == '0' &&
                             last_input[i] == '1') {
                             sounds[i].play();
