@@ -1,8 +1,3 @@
-cExtensions {
-  c
-  h
-}
-
 cppHeaderExtensions {
   hpp
 }
@@ -11,35 +6,6 @@ cppSrcExtensions {
   cpp
 }
 
-otherExtensions {
-}
-
-genFolderExclude {
-}
-
-genFileExclude {
-  \.txt$
-  Hackintosh-cxx$
-}
-
-modifiableFolderExclude {
-}
-
 modifiableFileExclude {
-  MD5\.
-}
-
-includeRelated {
-}
-
-includeCSys {
-}
-
-includeCppSys {
-}
-
-includeOtherLibs {
-}
-
-includeProject {
+  data/
 }

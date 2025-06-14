@@ -1,9 +1,2 @@
-*.dll
-*.o
-*.d
-*.res
-*.exe
-*.swp
-*.ttf
-*.wav
-BananaPiano
+.cache/
+build/

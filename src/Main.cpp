@@ -29,16 +29,19 @@ int main() {
     sf::ContextSettings settings;
     settings.depthBits = 24;
     settings.stencilBits = 8;
-    settings.antialiasingLevel = 4;
+    settings.antiAliasingLevel = 4;
     settings.majorVersion = 3;
     settings.minorVersion = 0;
 
     // Setup
-    sf::RenderWindow mainWin(sf::VideoMode(72, 72), "Banana Piano",
-                             sf::Style::Resize | sf::Style::Close, settings);
+    sf::RenderWindow mainWin(sf::VideoMode{{72, 72}}, "Banana Piano",
+                             sf::Style::Resize | sf::Style::Close,
+                             sf::State::Windowed, settings);
     mainWin.setFramerateLimit(25);
 
-    mainWin.setActive();
+    if (!mainWin.setActive()) {
+      return 1;
+    }
 
     // Set buffer clear values
     glClearColor(1.f, 1.f, 1.f, 1.f);
@@ -86,17 +89,16 @@ int main() {
     std::vector<char> lastInput(numNotes, '1');
 
     for (unsigned int i = 0; i < numNotes; i++) {
-        if (!buffers[i].loadFromFile(std::string("sounds/piano-") + notes[i] +
+        if (!buffers[i].loadFromFile(std::string("data/piano-") + notes[i] +
                                      ".wav")) {
             return 1;
         }
         sounds.emplace_back(buffers[i]);
     }
 
-    sf::Event event;
     while (mainWin.isOpen()) {
-        while (mainWin.pollEvent(event)) {
-            if (event.type == sf::Event::Closed) {
+        while (auto event = mainWin.pollEvent()) {
+            if (event->is<sf::Event::Closed>()) {
                 mainWin.close();
             }
         }

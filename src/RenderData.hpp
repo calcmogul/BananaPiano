@@ -16,8 +16,6 @@ const unsigned int sen = 3;  // sensors
  */
 class RenderData {
 public:
-    RenderData();
-
     std::vector<KalmanFilter> avgPos{sen, KalmanFilter(0.00004, 0.0004)};
     bool isConnected{false};
     bool haveValidData{false};
@@ -25,5 +23,5 @@ public:
     std::vector<float> rawPos{sen, 0.f};
     bool useRawInput{false};
 
-    sf::Font font;
+    sf::Font font{"data/arial.ttf"};
 };
