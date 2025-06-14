@@ -44,6 +44,11 @@ int main() {
     std::vector<char> last_input{NOTES.size(), '1'};
     bool have_valid_data = false;
 
+    // Connection indicator
+    sf::CircleShape connection_indicator{18.f};
+    connection_indicator.setOrigin(connection_indicator.getGeometricCenter());
+    connection_indicator.setPosition({36.f, 36.f});
+
     while (main_window.isOpen()) {
         while (auto event = main_window.pollEvent()) {
             if (event->is<sf::Event::Closed>()) {
@@ -96,23 +101,15 @@ int main() {
 
         main_window.clear(sf::Color::White);
 
-        // Render connection indicator
-        sf::CircleShape circle{18.f};
-        circle.setOrigin(circle.getGeometricCenter());
-        circle.setPosition({36.f, 36.f});
-        if (serial_port.is_connected()) {
-            if (have_valid_data) {
-                // Connected and valid data
-                circle.setFillColor({0, 200, 0});
-            } else {
-                // Connected but no valid data
-                circle.setFillColor({255, 220, 0});
-            }
+        if (serial_port.is_connected() && have_valid_data) {
+            connection_indicator.setFillColor({0, 200, 0});
+        } else if (serial_port.is_connected() && !have_valid_data) {
+            connection_indicator.setFillColor({255, 220, 0});
         } else {
             // Disconnected
-            circle.setFillColor({200, 0, 0});
+            connection_indicator.setFillColor({200, 0, 0});
         }
-        main_window.draw(circle);
+        main_window.draw(connection_indicator);
 
         main_window.display();
     }
