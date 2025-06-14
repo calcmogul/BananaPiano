@@ -30,19 +30,19 @@ int main() {
     char num_read = 0;
 
     std::vector<sf::Sound> sounds;
-    std::vector<sf::SoundBuffer> buffers{NUM_NOTES};
+    sounds.reserve(NUM_NOTES);
+
+    std::vector<sf::SoundBuffer> buffers;
+    buffers.reserve(NUM_NOTES);
+
     constexpr std::array NOTES{"g#", "a",  "bb", "b", "c",  "c#",
                                "d",  "eb", "e",  "f", "f#", "g"};
-    std::vector<char> last_input(NUM_NOTES, '1');
-
-    for (size_t i = 0; i < NUM_NOTES; ++i) {
-        if (!buffers[i].loadFromFile(
-                std::format("data/piano-{}.wav", NOTES[i]))) {
-            return 1;
-        }
-        sounds.emplace_back(buffers[i]);
+    for (const auto& note : NOTES) {
+        buffers.emplace_back(std::format("data/piano-{}.wav", note));
+        sounds.emplace_back(buffers.back());
     }
 
+    std::vector<char> last_input{NUM_NOTES, '1'};
     bool have_valid_data = false;
 
     while (main_window.isOpen()) {
