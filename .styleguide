@@ -8,6 +8,7 @@ cppSrcFileInclude {
 
 modifiableFileExclude {
   data/
+  \.pdf$
 }
 
 includeOtherLibs {
