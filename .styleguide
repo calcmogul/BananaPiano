@@ -1,11 +1,15 @@
-cppHeaderExtensions {
-  hpp
+cppHeaderFileInclude {
+  \.hpp$
 }
 
-cppSrcExtensions {
-  cpp
+cppSrcFileInclude {
+  \.cpp$
 }
 
 modifiableFileExclude {
   data/
+}
+
+includeOtherLibs {
+  ^windows\.h$
 }

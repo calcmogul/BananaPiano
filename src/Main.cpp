@@ -1,81 +1,28 @@
-// Copyright (c) Tyler Veness 2015-2017. All Rights Reserved.
+// Copyright (c) Tyler Veness
 
-#include <bitset>
-#include <cmath>
-#include <cstdlib>
-#include <iostream>
+#include <array>
+#include <format>
+#include <print>
 #include <string>
 #include <vector>
 
 #include <SFML/Audio/Sound.hpp>
 #include <SFML/Audio/SoundBuffer.hpp>
+#include <SFML/Graphics/CircleShape.hpp>
 #include <SFML/Graphics/RenderWindow.hpp>
-#include <SFML/OpenGL.hpp>
 #include <SFML/Window/Event.hpp>
 
-#include "KalmanFilter.hpp"
-#include "RenderData.hpp"
-#include "Rendering.hpp"
 #include "SerialPort.hpp"
 
-const int numNotes = 3;
+static constexpr int NUM_NOTES = 3;
 
-// Implements mouse input driver for 3D capacitor
 int main() {
-    RenderData renderData;
-
     SerialPort serialPort;
 
-    sf::ContextSettings settings;
-    settings.depthBits = 24;
-    settings.stencilBits = 8;
-    settings.antiAliasingLevel = 4;
-    settings.majorVersion = 3;
-    settings.minorVersion = 0;
-
-    // Setup
-    sf::RenderWindow mainWin(sf::VideoMode{{72, 72}}, "Banana Piano",
+    sf::RenderWindow mainWin{sf::VideoMode{{72, 72}}, "Banana Piano",
                              sf::Style::Resize | sf::Style::Close,
-                             sf::State::Windowed, settings);
+                             sf::State::Windowed};
     mainWin.setFramerateLimit(25);
-
-    if (!mainWin.setActive()) {
-      return 1;
-    }
-
-    // Set buffer clear values
-    glClearColor(1.f, 1.f, 1.f, 1.f);
-    glClearDepth(1.f);
-
-    // Enable depth buffering
-    glDepthFunc(GL_LESS);
-    glDepthMask(GL_TRUE);
-    glEnable(GL_DEPTH_TEST);
-
-    // Enable alpha blending
-    glEnable(GL_BLEND);
-    glEnable(GL_ALPHA_TEST);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-    // Disable textures since they are unneeded
-    glDisable(GL_TEXTURE_2D);
-
-    // Declare lighting parameters
-    GLfloat mat_specular[] = {1.0, 1.0, 1.0, 1.0};
-    GLfloat mat_shininess[] = {50.0};
-    GLfloat light_position[] = {1.0, 1.0, 1.0, 0.0};
-
-    // Set lighting parameters
-    glShadeModel(GL_SMOOTH);
-    glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
-    glMaterialfv(GL_FRONT, GL_SHININESS, mat_shininess);
-    glLightfv(GL_LIGHT0, GL_POSITION, light_position);
-
-    // Enable lighting
-    glEnable(GL_LIGHTING);
-    glEnable(GL_LIGHT0);
-    glEnable(GL_COLOR_MATERIAL);
-    glColorMaterial(GL_FRONT, GL_AMBIENT_AND_DIFFUSE);
 
     // Used to store data read from serial port or socket
     std::string serialPortData;
@@ -83,18 +30,20 @@ int main() {
     char numRead = 0;
 
     std::vector<sf::Sound> sounds;
-    std::vector<sf::SoundBuffer> buffers{numNotes};
-    std::vector<std::string> notes{"g#", "a",  "bb", "b", "c",  "c#",
-                                   "d",  "eb", "e",  "f", "f#", "g"};
-    std::vector<char> lastInput(numNotes, '1');
+    std::vector<sf::SoundBuffer> buffers{NUM_NOTES};
+    constexpr std::array NOTES{"g#", "a",  "bb", "b", "c",  "c#",
+                               "d",  "eb", "e",  "f", "f#", "g"};
+    std::vector<char> lastInput(NUM_NOTES, '1');
 
-    for (unsigned int i = 0; i < numNotes; i++) {
-        if (!buffers[i].loadFromFile(std::string("data/piano-") + notes[i] +
-                                     ".wav")) {
+    for (size_t i = 0; i < NUM_NOTES; ++i) {
+        if (!buffers[i].loadFromFile(
+                std::format("data/piano-{}.wav", NOTES[i]))) {
             return 1;
         }
         sounds.emplace_back(buffers[i]);
     }
+
+    bool haveValidData = false;
 
     while (mainWin.isOpen()) {
         while (auto event = mainWin.pollEvent()) {
@@ -123,12 +72,12 @@ int main() {
                 serialPort.disconnect();
             } else if (curChar == '\n' && serialPortData.length() != 0) {
                 // If curChar == '\n', there is a new line of complete data
-                std::cout << serialPortData << std::endl;
+                std::println("{}", serialPortData);
 
-                if (serialPortData.length() == numNotes) {
-                    renderData.haveValidData = true;
+                if (serialPortData.length() == NUM_NOTES) {
+                    haveValidData = true;
 
-                    for (unsigned int i = 0; i < numNotes; i++) {
+                    for (size_t i = 0; i < NUM_NOTES; ++i) {
                         if (serialPortData[i] == '0' && lastInput[i] == '1') {
                             sounds[i].play();
                         }
@@ -136,7 +85,7 @@ int main() {
                         lastInput[i] = serialPortData[i];
                     }
                 } else {
-                    renderData.haveValidData = false;
+                    haveValidData = false;
                 }
 
                 // Reset serial data storage in preparation for new line of data
@@ -146,10 +95,26 @@ int main() {
             }
         }
 
-        renderData.isConnected = serialPort.isConnected();
+        mainWin.clear(sf::Color::White);
 
-        renderNotes(&mainWin, renderData);
+        // Render connection indicator
+        sf::CircleShape circle{18.f};
+        circle.setOrigin(circle.getGeometricCenter());
+        circle.setPosition({36.f, 36.f});
+        if (serialPort.isConnected()) {
+            if (haveValidData) {
+                // Connected and valid data
+                circle.setFillColor(sf::Color{0, 200, 0});
+            } else {
+                // Connected but no valid data
+                circle.setFillColor(sf::Color{255, 220, 0});
+            }
+        } else {
+            // Disconnected
+            circle.setFillColor(sf::Color{200, 0, 0});
+        }
+        mainWin.draw(circle);
+
+        mainWin.display();
     }
-
-    return 0;
 }

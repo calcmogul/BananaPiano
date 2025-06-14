@@ -1,10 +1,12 @@
-// Copyright (c) Tyler Veness 2015-2017. All Rights Reserved.
+// Copyright (c) Tyler Veness
 
 #include "SerialPort.hpp"
 
 #include <algorithm>
 #include <cstring>
 #include <iostream>
+#include <string>
+#include <vector>
 
 #ifndef _WIN32
 #include <dirent.h>  // Method for listing serial ports
@@ -13,7 +15,8 @@
 #include <sys/types.h>
 #include <termios.h>  // POSIX terminal control definitions
 #include <unistd.h>   // UNIX standard function definitions
-#include <cerrno>     // Error number definitions
+
+#include <cerrno>  // Error number definitions
 #endif
 
 SerialPort::SerialPort(std::string portName) {
@@ -251,15 +254,10 @@ std::vector<std::string> SerialPort::getSerialPorts() {
     d = opendir("/dev");
     if (d) {
         while ((dir = readdir(d)) != nullptr) {
-#ifdef ARDUINO
-            std::string names[2] = {"ttyACM", "ttyUSB"};
-#else
-            std::string names[1] = {"ttyUSB"};
-#endif
             if (dir->d_type == DT_CHR) {
-                for (auto& name : names) {
-                    if (std::strncmp(dir->d_name, name.c_str(),
-                                     name.length() - 1) == 0) {
+                // for (auto& name : {"ttyUSB"}) {
+                for (auto& name : {"ttyACM", "ttyUSB"}) {
+                    if (std::strncmp(dir->d_name, name, 6) == 0) {
                         std::string tmp = "/dev/";
                         tmp += dir->d_name;
                         ports.emplace_back(tmp);
