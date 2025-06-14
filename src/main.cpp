@@ -92,7 +92,6 @@ int main() {
                 // Reset serial data storage in preparation for new line of data
                 serial_port_data.clear();
                 cur_char = '\0';
-                num_read = 0;
             }
         }
 
