@@ -37,7 +37,7 @@ fetchcontent_declare(
     SYSTEM
 )
 fetchcontent_makeavailable(SFML)
-target_link_libraries(BananaPiano PUBLIC SFML::Graphics SFML::Audio)
+target_link_libraries(BananaPiano PUBLIC SFML::Audio SFML::Graphics)
 
 install(TARGETS BananaPiano DESTINATION bin)
 install(DIRECTORY data DESTINATION bin)
