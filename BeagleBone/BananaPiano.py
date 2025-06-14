@@ -1,10 +1,11 @@
 #!/usr/bin/env python2
 
-import Adafruit_BBIO.GPIO as GPIO
+from time import sleep
+
 import Adafruit_BBIO.ADC as ADC
+import Adafruit_BBIO.GPIO as GPIO
 import Adafruit_BBIO.UART as UART
 import serial
-from time import sleep
 
 # Set up DIO pins
 DIOs = ["P9_27", "P9_25", "P9_23"]
@@ -22,19 +23,19 @@ ser = serial.Serial("/dev/ttyO1", 115200)
 ser.close()
 
 # Holds analog pin values
-values = ['0', '0', '0', '\n']
+values = ["0", "0", "0", "\n"]
 
-while (1):
+while 1:
     if ser.isOpen():
         for i in range(0, 3):
             pinVal = ADC.read(AINs[i])
 
             if pinVal > 0.55:
-                values[i] = '1'
+                values[i] = "1"
             else:
-                values[i] = '0'
-        ser.write(''.join(values))
+                values[i] = "0"
+        ser.write("".join(values))
     else:
         ser.open()
-    sleep(.05)
+    sleep(0.05)
 ser.close()
