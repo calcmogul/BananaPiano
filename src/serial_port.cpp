@@ -4,13 +4,15 @@
 
 #include <algorithm>
 #include <cstring>
+#include <filesystem>
+#include <format>
 #include <print>
 #include <string>
+#include <string_view>
 #include <vector>
 
 #ifndef _WIN32
-#include <dirent.h>  // Method for listing serial ports
-#include <fcntl.h>   // File control definitions
+#include <fcntl.h>  // File control definitions
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <termios.h>  // POSIX terminal control definitions
@@ -19,61 +21,56 @@
 #include <cerrno>  // Error number definitions
 #endif
 
-void SerialPort::connect(std::string port_name) {
+void SerialPort::connect(std::string_view port_name) {
     // Disconnect before reconnecting or connecting to a different serial port
     if (m_connected) {
         disconnect();
     }
 
-    if (port_name != "") {
-        // Update name if necessary
-        m_port_name = port_name;
-    } else if (m_port_name == "") {
-        // If no stored name, don't attempt a connection
-        return;
-    }
+    m_port_name = port_name;
 
-// Try to connect to the given port
 #ifdef _WIN32
-    serial_handle =
-        CreateFile(port_name.c_str(), GENERIC_READ | GENERIC_WRITE, 0, nullptr,
-                   OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+    // Try to connect to the given port
+    m_serial_handle =
+        CreateFile(m_port_name.c_str(), GENERIC_READ | GENERIC_WRITE, 0,
+                   nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
 #else
-    m_fd = open(port_name.c_str(), O_RDONLY | O_NOCTTY | O_NDELAY);
+    // Try to connect to the given port
+    m_fd = open(m_port_name.c_str(), O_RDONLY | O_NOCTTY | O_NONBLOCK);
 #endif
 
-// Check if connection was successful
 #ifdef _WIN32
-    if (serial_handle == INVALID_HANDLE_VALUE) {
+    // Check if connection was successful
+    if (m_serial_handle == INVALID_HANDLE_VALUE) {
         if (GetLastError() == ERROR_FILE_NOT_FOUND) {
             std::print("{}: Unable to open {}: No such file or directory",
-                       __FILE__, port_name);
+                       __FILE__, m_port_name);
         } else {
-            std::println("{}: Unable to open {}", __FILE__, port_name);
+            std::println("{}: Unable to open {}", __FILE__, m_port_name);
         }
-
         return;
     }
 #else
+    // Check if connection was successful
     if (m_fd == -1) {
         std::println("{}: Unable to open {}: No such file or directory",
                      __FILE__, m_port_name);
-
         return;
-    } else {
-        fcntl(m_fd, F_SETFL, FNDELAY);
     }
+
+    // Set socket to nonblocking
+    fcntl(m_fd, F_SETFL, O_NONBLOCK);
 #endif
 
-// Set baud rate
 #ifdef _WIN32
+    // Set baud rate
     DCB serial_port_params = {0};
 
     // Try to get the current comm parameters
-    if (!GetCommState(serial_handle, &serial_port_params)) {
+    if (!GetCommState(m_serial_handle, &serial_port_params)) {
         // If impossible, show an error
         std::println("{}: Unable to retrieve current serial parameters for {}",
-                     __FILE__, port_name);
+                     __FILE__, m_port_name);
 
         return;
     } else {
@@ -84,14 +81,14 @@ void SerialPort::connect(std::string port_name) {
         serial_port_params.Parity = NOPARITY;
 
         // Set the parameters and check for their proper application
-        if (!SetCommState(serial_handle, &serial_port_params)) {
+        if (!SetCommState(m_serial_handle, &serial_port_params)) {
             std::println("{}: Unable to set serial port parameters for {}",
-                         __FILE__, port_name);
-
+                         __FILE__, m_port_name);
             return;
         }
     }
 #else
+    // Set baud rate
     struct termios options;
 
     // Get the current options for the port
@@ -115,7 +112,7 @@ void SerialPort::disconnect() {
     // Disconnect if necessary
     if (m_connected) {
 #ifdef _WIN32
-        CloseHandle(serial_handle);
+        CloseHandle(m_serial_handle);
 #else
         close(m_fd);
 #endif
@@ -123,37 +120,23 @@ void SerialPort::disconnect() {
     }
 }
 
-int SerialPort::read(char* buffer, unsigned int num_chars) {
+int SerialPort::read(char* buffer, size_t num_chars) {
 #ifdef _WIN32
-    // Number of bytes we'll have read
-    DWORD bytes_read;
-#else
-    // Number of bytes we'll have read
-    int bytes_read;
-#endif
-
-#ifdef _WIN32
-    // Use the ClearCommError function to get status info on the SerialPort port
-    ClearCommError(serial_handle, &m_errors, &m_status);
+    // Get status info on the serial port
+    DWORD errors;
+    COMSTAT status;
+    ClearCommError(m_serial_handle, &errors, &status);
 
     // Check if there is something to read
-    if (m_status.cbInQue > 0) {
-        /* If there is we check if there is enough data to read the required
-         * number of characters, if not we'll read only the available
-         * characters to prevent locking of the application.
-         */
-        // Number of bytes that will actually be read
-        unsigned int toRead;
-        if (m_status.cbInQue > num_chars) {
-            toRead = num_chars;
-        } else {
-            toRead = m_status.cbInQue;
-        }
+    if (status.cbInQue > 0) {
+        // Number of characters to read
+        size_t to_read = std::min<size_t>(num_chars, status.cbInQue);
 
         /* Try to read the require number of chars, and return the number of
          * read bytes on success
          */
-        if (ReadFile(serial_handle, buffer, toRead, &bytes_read, nullptr)) {
+        DWORD bytes_read;
+        if (ReadFile(m_serial_handle, buffer, to_read, &bytes_read, nullptr)) {
             return bytes_read;
         } else if (GetLastError() != ERROR_IO_PENDING) {
             return -1;
@@ -166,16 +149,12 @@ int SerialPort::read(char* buffer, unsigned int num_chars) {
         return 0;
     }
 #else
-    bytes_read = ::read(m_fd, buffer, num_chars);
+    int bytes_read = ::read(m_fd, buffer, num_chars);
 
     // Check for disconnection
     if (bytes_read == 0) {
         struct stat file_stats;
-        if (stat(m_port_name.c_str(), &file_stats) == -1) {
-            return -1;
-        } else {
-            return 0;
-        }
+        return stat(m_port_name.c_str(), &file_stats);
     } else if (bytes_read == -1 && errno != EAGAIN) {
         return -1;
     } else {
@@ -184,7 +163,7 @@ int SerialPort::read(char* buffer, unsigned int num_chars) {
 #endif
 }
 
-bool SerialPort::write(char* buffer, unsigned int num_chars) {
+bool SerialPort::write(char* buffer, size_t num_chars) {
 #ifdef _WIN32
     DWORD bytes_sent = 0;
 #else
@@ -193,17 +172,19 @@ bool SerialPort::write(char* buffer, unsigned int num_chars) {
 
 #ifdef _WIN32
     // Try to write the buffer on the serial port
-    if (!WriteFile(serial_handle, static_cast<void*>(buffer), num_chars,
+    if (!WriteFile(m_serial_handle, static_cast<void*>(buffer), num_chars,
                    &bytes_sent, 0)) {
         // Write failed, so retrieve comm error
-        ClearCommError(serial_handle, &m_errors, &m_status);
+        DWORD errors;
+        COMSTAT status;
+        ClearCommError(m_serial_handle, &errors, &status);
 
         return false;
     } else {
         return true;
     }
 #else
-    unsigned int pos = 0;
+    size_t pos = 0;
 
     while (pos < num_chars) {
         bytes_sent = ::write(m_fd, &buffer[pos], num_chars);
@@ -223,39 +204,20 @@ std::vector<std::string> SerialPort::get_serial_ports() {
     std::vector<std::string> ports;
 
 #ifdef _WIN32
-    HKEY reg_adapters;
-    LONG res = RegOpenKeyEx(HKEY_LOCAL_MACHINE, AdapterKey, 0, KEY_READ,
-                            &reg_adapters);
-
-    for (DWORD index = 0; res == ERROR_SUCCESS; index++) {
-        char sub_key_name[255];
-        DWORD name = 255;
-        res = RegEnumKeyEx(reg_adapters, index, sub_key_name, &name, nullptr,
-                           nullptr, nullptr, nullptr);
-        if (res != ERROR_SUCCESS) {
-            break;
+    // Enumerate COM ports by checking if QueryDosDevice() returns nonzero
+    for (int i = 0; i < 255; ++i) {
+        char device_name[4096];
+        if (QueryDosDevice(std::format("COM{}", i).c_str(), device_name, 4096) >
+            0) {
+            ports.emplace_back(device_name);
         }
-        // do something with name
     }
 #else
-    DIR* d;
-    struct dirent* dir;
-    d = opendir("/dev");
-    if (d) {
-        while ((dir = readdir(d)) != nullptr) {
-            if (dir->d_type == DT_CHR) {
-                // for (auto& name : {"ttyUSB"}) {
-                for (auto& name : {"ttyACM", "ttyUSB"}) {
-                    if (std::strncmp(dir->d_name, name, 6) == 0) {
-                        std::string tmp = "/dev/";
-                        tmp += dir->d_name;
-                        ports.emplace_back(tmp);
-                    }
-                }
-            }
+    for (const auto& dir_entry : std::filesystem::directory_iterator{"/dev"}) {
+        auto stem = dir_entry.path().stem().string();
+        if (stem.starts_with("ttyACM") || stem.starts_with("ttyUSB")) {
+            ports.emplace_back(dir_entry.path());
         }
-
-        closedir(d);
     }
 #endif
 

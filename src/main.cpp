@@ -27,7 +27,7 @@ int main() {
     // Used to store data read from serial port or socket
     std::string serial_port_data;
     char cur_char = '\0';
-    char num_read = 0;
+    int num_read = 0;
 
     std::vector<sf::Sound> sounds;
     sounds.reserve(NUM_NOTES);
@@ -55,7 +55,7 @@ int main() {
         // Attempt a connection
         if (!serial_port.is_connected()) {
             auto ports = SerialPort::get_serial_ports();
-            if (ports.size() > 0) {
+            if (!ports.empty()) {
                 serial_port.connect(ports[0]);
             }
         }
