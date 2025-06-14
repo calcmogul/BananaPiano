@@ -105,14 +105,14 @@ int main() {
         if (serial_port.is_connected()) {
             if (have_valid_data) {
                 // Connected and valid data
-                circle.setFillColor(sf::Color{0, 200, 0});
+                circle.setFillColor({0, 200, 0});
             } else {
                 // Connected but no valid data
-                circle.setFillColor(sf::Color{255, 220, 0});
+                circle.setFillColor({255, 220, 0});
             }
         } else {
             // Disconnected
-            circle.setFillColor(sf::Color{200, 0, 0});
+            circle.setFillColor({200, 0, 0});
         }
         main_window.draw(circle);
 
