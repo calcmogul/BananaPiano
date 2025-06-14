@@ -3,7 +3,6 @@
 #pragma once
 
 #include <string>
-#include <string_view>
 #include <vector>
 
 #ifdef _WIN32
@@ -16,10 +15,6 @@
  */
 class SerialPort {
 public:
-    // Initialize SerialPort communication with the given COM port
-    explicit SerialPort(std::string_view port_name = "")
-        : m_port_name{port_name} {}
-
     /* Close the connection
      * NOTE: for some reason you can't connect again before exiting the program
      * and running it again.
