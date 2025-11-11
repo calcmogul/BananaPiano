@@ -10,7 +10,3 @@ modifiableFileExclude {
   data/
   \.pdf$
 }
-
-includeOtherLibs {
-  ^windows\.h$
-}
