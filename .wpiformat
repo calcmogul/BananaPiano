@@ -1,0 +1,4 @@
+modifiableFileExclude {
+  data/
+  \.pdf$
+}
