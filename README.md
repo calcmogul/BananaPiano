@@ -26,4 +26,4 @@ The desktop application opens a small window with a circle indicating the serial
 | Yellow | Connected but received invalid data |
 | Green  | Connected and received valid data   |
 
-The desktop app will automatically connect to an Arduino or BeagleBone that's plugged in.
+The desktop application will automatically connect to an Arduino or BeagleBone that's plugged in.
